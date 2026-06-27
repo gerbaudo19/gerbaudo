@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.gerbaudo/
+*.db
+*.db-shm
+*.db-wal
+*.log
+daemon_out*.txt
+daemon_err*.txt

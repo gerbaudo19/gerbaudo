@@ -1,0 +1,4 @@
+{
+  "daemonPort": 9877,
+  "dbPath": ".gerbaudo/data.db"
+}
