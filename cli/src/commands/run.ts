@@ -1,10 +1,17 @@
 import path from 'node:path'
 import { Command } from 'commander'
+import chalk from 'chalk'
 import { loadConfig, findConfigPath } from '../config/config.js'
 import { getDb } from '../storage/db.js'
 import { CatalogStore } from '../storage/catalog.js'
 import { RecordStore } from '../storage/records.js'
 import type { Endpoint } from '../catalog/endpoint.js'
+
+function colorStatus(code: number): string {
+  if (code < 300) return chalk.green(String(code))
+  if (code < 400) return chalk.yellow(String(code))
+  return chalk.red(String(code))
+}
 
 export function matchRoute(pattern: string, actual: string): Record<string, string> | null {
   const patternParts = pattern.split('/')
@@ -35,7 +42,10 @@ export function createRunCommand(): Command {
     .option('-X, --method <method>', 'HTTP method', 'GET')
     .option('-d, --data <body>', 'Request body (JSON string)')
     .option('-H, --header <headers...>', 'Request headers (Key:Value)')
-    .option('-p, --param <params...>', 'Path/query params (Key=Value). Fills :param in route first, remainder become query string.')
+    .option(
+      '-p, --param <params...>',
+      'Path/query params (Key=Value). Fills :param in route first, remainder become query string.',
+    )
     .option('--json', 'Output raw JSON response')
     .action(async (endpoint, opts) => {
       const configPath = findConfigPath()
@@ -45,10 +55,7 @@ export function createRunCommand(): Command {
       }
 
       const config = loadConfig(configPath)
-      const dbPath = path.join(
-        path.dirname(configPath),
-        config.dbPath,
-      )
+      const dbPath = path.join(path.dirname(configPath), config.dbPath)
 
       const db = getDb(dbPath)
       const catalogStore = new CatalogStore(db)
@@ -77,17 +84,19 @@ export function createRunCommand(): Command {
       }
 
       if (!match) {
-        console.error(`Endpoint not found: ${opts.method} ${endpoint}`)
+        console.error(chalk.red(`Endpoint not found: ${opts.method} ${endpoint}`))
         console.error()
         const total = catalogStore.findAll().length
         if (total === 0) {
-          console.error('No endpoints registered. Make sure:')
-          console.error('  1. The daemon is running: npx gerbaudo daemon')
-          console.error('  2. The SDK middleware is active in your backend app')
-          console.error('  3. Routes have been registered: check with "gerbaudo endpoints"')
+          console.error(chalk.yellow('No endpoints registered. Make sure:'))
+          console.error(`  ${chalk.cyan('1.')} The daemon is running: ${chalk.bold('npx gerbaudo daemon')}`)
+          console.error(`  ${chalk.cyan('2.')} The SDK middleware is active in your backend app`)
+          console.error(
+            `  ${chalk.cyan('3.')} Routes have been registered: check with ${chalk.bold('gerbaudo endpoints')}`,
+          )
         } else {
-          console.error(`Available endpoints: ${total}. Use "gerbaudo endpoints" to list them.`)
-          console.error('Check the method and path spelling.')
+          console.error(chalk.yellow(`Available endpoints: ${total}. Use "gerbaudo endpoints" to list them.`))
+          console.error(chalk.yellow('Check the method and path spelling.'))
         }
         process.exit(1)
       }
@@ -113,6 +122,8 @@ export function createRunCommand(): Command {
           const idx = p.indexOf('=')
           if (idx > 0) {
             allParams[p.slice(0, idx)] = p.slice(idx + 1)
+          } else {
+            console.error(`Warning: --param "${p}" has no "=" sign, skipping`)
           }
         }
       }
@@ -129,7 +140,7 @@ export function createRunCommand(): Command {
         delete queryParams[key]
       }
 
-      const baseUrl = `http://127.0.0.1:${config.daemonPort}`
+      const baseUrl = config.backendUrl ?? 'http://127.0.0.1:3000'
       const url = new URL(resolvedPath, baseUrl)
       for (const [k, v] of Object.entries(queryParams)) {
         url.searchParams.set(k, v)
@@ -137,13 +148,15 @@ export function createRunCommand(): Command {
 
       const start = performance.now()
 
+      const fetchHeaders: Record<string, string> = { ...headers }
+      if (body) {
+        fetchHeaders['Content-Type'] = 'application/json'
+      }
+
       try {
         const response = await fetch(url.toString(), {
           method: match.method,
-          headers: {
-            'Content-Type': 'application/json',
-            ...headers,
-          },
+          headers: fetchHeaders,
           body: body ?? undefined,
         })
 
@@ -155,7 +168,7 @@ export function createRunCommand(): Command {
           method: match.method,
           path: match.path,
           status: response.status,
-          requestHeaders: JSON.stringify(headers),
+          requestHeaders: JSON.stringify(fetchHeaders),
           requestBody: body,
           responseHeaders: JSON.stringify(Object.fromEntries(response.headers)),
           responseBody,
@@ -175,7 +188,7 @@ export function createRunCommand(): Command {
           return
         }
 
-        console.log(`\n${response.status} ${response.statusText} (${durationMs}ms)\n`)
+        console.log(`\n${colorStatus(response.status)} ${response.statusText} (${durationMs}ms)\n`)
         try {
           const parsed = JSON.parse(responseBody)
           console.log(JSON.stringify(parsed, null, 2))
@@ -185,8 +198,8 @@ export function createRunCommand(): Command {
       } catch (err) {
         const msg = String(err)
         if (msg.includes('ECONNREFUSED')) {
-          console.error(`Cannot connect to backend at ${baseUrl}. Is the daemon running?`)
-          console.error('Start it with: npx gerbaudo daemon')
+          console.error(`Cannot connect to backend at ${baseUrl}. Is it running?`)
+          console.error('Start it with your app server (e.g., npm start, node app.js)')
         } else if (msg.includes('fetch')) {
           console.error(`Request to ${match.method} ${match.path} failed.`)
           console.error(`Is the backend server running at ${baseUrl}?`)

@@ -8,8 +8,10 @@ describe('getDb', () => {
 
   it('creates database with WAL mode and applies migrations', () => {
     const db = getDb(':memory:')
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as { name: string }[]
-    const names = tables.map(t => t.name)
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as {
+      name: string
+    }[]
+    const names = tables.map((t) => t.name)
     expect(names).toContain('endpoints')
     expect(names).toContain('records')
     expect(names).toContain('_migrations')

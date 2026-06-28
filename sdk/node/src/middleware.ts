@@ -6,8 +6,15 @@ function extractRoutePath(req: Request): string {
   return (req.route?.path as string) ?? req.path
 }
 
-function getEndpointId(client: GerbaudoClient, method: string, path: string): string {
-  return `${method}:${path}`
+function getCircularReplacer(): (this: unknown, _key: string, value: unknown) => unknown {
+  const seen = new WeakSet()
+  return function (_key: string, value: unknown): unknown {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) return '[Circular]'
+      seen.add(value)
+    }
+    return value
+  }
 }
 
 export function createMiddleware(opts?: GerbaudoOptions) {
@@ -19,9 +26,7 @@ export function createMiddleware(opts?: GerbaudoOptions) {
 
   client.start()
 
-  if (opts?.app) {
-    discoverRoutes(opts.app)
-  }
+  let discovered = false
 
   function discoverRoutes(app: { _router?: { stack: unknown[] } }): void {
     if (!app._router?.stack) return
@@ -42,13 +47,18 @@ export function createMiddleware(opts?: GerbaudoOptions) {
 
   function safeStringify(val: unknown): string {
     try {
-      return JSON.stringify(val)
+      return JSON.stringify(val, getCircularReplacer())
     } catch {
       return String(val)
     }
   }
 
   function middleware(req: Request, res: Response, next: NextFunction): void {
+    if (!discovered && opts?.app) {
+      discoverRoutes(opts.app)
+      discovered = true
+    }
+
     const start = performance.now()
 
     let responseBody: unknown = null
@@ -71,7 +81,7 @@ export function createMiddleware(opts?: GerbaudoOptions) {
       try {
         const durationMs = Math.round(performance.now() - start)
         const path = extractRoutePath(req)
-        const endpointId = getEndpointId(client, req.method, path)
+        const endpointId = client.getEndpointId(req.method, path)
 
         client.recordIntercept({
           endpointId,
@@ -95,6 +105,7 @@ export function createMiddleware(opts?: GerbaudoOptions) {
   }
 
   middleware.discover = discoverRoutes
+  middleware.stop = () => client.stop()
 
   return middleware
 }

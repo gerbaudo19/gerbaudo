@@ -92,9 +92,7 @@ export class RecordStore {
   }
 
   findById(id: string): InterceptRecord | undefined {
-    return this.db
-      .prepare('SELECT * FROM records WHERE id = ?')
-      .get(id) as InterceptRecord | undefined
+    return this.db.prepare('SELECT * FROM records WHERE id = ?').get(id) as InterceptRecord | undefined
   }
 
   getStats(): {
@@ -138,9 +136,7 @@ export class RecordStore {
       .all() as { path: string; method: string; avgDuration: number }[]
 
     const errorCount = (
-      this.db
-        .prepare('SELECT COUNT(*) as cnt FROM records WHERE status >= 400')
-        .get() as { cnt: number }
+      this.db.prepare('SELECT COUNT(*) as cnt FROM records WHERE status >= 400').get() as { cnt: number }
     ).cnt
 
     return {

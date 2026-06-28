@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { type Request, type Response, type NextFunction } from 'express'
 import type { Server as HttpServer } from 'node:http'
 import type { CatalogStore } from '../storage/catalog.js'
 import type { RecordStore } from '../storage/records.js'
@@ -10,15 +10,15 @@ export class DaemonServer {
   private server: HttpServer | null = null
   private port: number
 
-  constructor(
-    config: GerbaudoConfig,
-    catalogStore: CatalogStore,
-    recordStore: RecordStore,
-  ) {
+  constructor(config: GerbaudoConfig, catalogStore: CatalogStore, recordStore: RecordStore) {
     this.port = config.daemonPort
     this.app = express()
     this.app.use(express.json())
     this.app.use('/api', createRouter(catalogStore, recordStore))
+    this.app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+      console.error('Daemon error:', err)
+      res.status(500).json({ error: 'Internal server error' })
+    })
   }
 
   start(): Promise<void> {

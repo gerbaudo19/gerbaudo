@@ -57,7 +57,7 @@ describe('CatalogStore', () => {
     it('filters by method', () => {
       const results = store.findAll({ method: 'GET' })
       expect(results).toHaveLength(2)
-      results.forEach(e => expect(e.method).toBe('GET'))
+      results.forEach((e) => expect(e.method).toBe('GET'))
     })
 
     it('filters by path (LIKE)', () => {

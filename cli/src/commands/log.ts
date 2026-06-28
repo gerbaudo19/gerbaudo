@@ -1,8 +1,16 @@
 import path from 'node:path'
 import { Command } from 'commander'
+import chalk from 'chalk'
+import Table from 'cli-table3'
 import { loadConfig, findConfigPath } from '../config/config.js'
 import { getDb } from '../storage/db.js'
 import { RecordStore } from '../storage/records.js'
+
+function colorStatus(code: number): string {
+  if (code < 300) return chalk.green(String(code))
+  if (code < 400) return chalk.yellow(String(code))
+  return chalk.red(String(code))
+}
 
 export function createLogCommand(): Command {
   const cmd = new Command('log')
@@ -17,12 +25,7 @@ export function createLogCommand(): Command {
     .action((endpoint, opts) => {
       const configPath = findConfigPath()
       const config = loadConfig(configPath ?? undefined)
-      const dbPath = configPath
-        ? path.join(
-            path.dirname(configPath),
-            config.dbPath,
-          )
-        : config.dbPath
+      const dbPath = configPath ? path.join(path.dirname(configPath), config.dbPath) : config.dbPath
 
       const db = getDb(dbPath)
       const recordStore = new RecordStore(db)
@@ -42,19 +45,34 @@ export function createLogCommand(): Command {
       }
 
       if (records.length === 0) {
-        console.log('No records found.')
+        console.log(chalk.yellow('No records found.'))
         return
       }
 
-      const rows = records.map((r) => ({
-        ID: r.id.slice(0, 8),
-        Method: r.method,
-        Path: r.path,
-        Status: r.status,
-        'Duration (ms)': r.durationMs ?? '-',
-        'Time': r.createdAt,
-      }))
-      console.table(rows)
+      const table = new Table({
+        head: [
+          chalk.cyan('ID'),
+          chalk.cyan('Method'),
+          chalk.cyan('Path'),
+          chalk.cyan('Status'),
+          chalk.cyan('Duration'),
+          chalk.cyan('Time'),
+        ],
+        style: { head: [] },
+      })
+
+      for (const r of records) {
+        table.push([
+          r.id.slice(0, 8),
+          r.method,
+          r.path,
+          colorStatus(r.status),
+          r.durationMs != null ? `${r.durationMs}ms` : '-',
+          r.createdAt,
+        ])
+      }
+
+      console.log(table.toString())
     })
 
   return cmd

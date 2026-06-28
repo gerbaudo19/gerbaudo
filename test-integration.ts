@@ -37,7 +37,9 @@ async function main() {
   // Clean up any leftover test DB from a previous run
   const testDb = join(__dirname, '.gerbaudo-test.db')
   for (const suffix of ['', '-wal', '-shm']) {
-    try { unlinkSync(testDb + suffix) } catch {}
+    try {
+      unlinkSync(testDb + suffix)
+    } catch {}
   }
 
   console.log('Starting daemon...')

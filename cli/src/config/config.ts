@@ -5,11 +5,13 @@ export interface GerbaudoConfig {
   daemonPort: number
   dbPath: string
   sdkPath?: string
+  backendUrl?: string
 }
 
 const DEFAULT_CONFIG: GerbaudoConfig = {
   daemonPort: 9876,
   dbPath: '.gerbaudo/data.db',
+  backendUrl: 'http://127.0.0.1:3000',
 }
 
 export function findConfigPath(startDir?: string): string | null {
@@ -33,9 +35,6 @@ export function loadConfig(path?: string): GerbaudoConfig {
   return { ...DEFAULT_CONFIG, ...JSON.parse(raw) }
 }
 
-export function writeConfig(
-  config: GerbaudoConfig,
-  targetPath: string,
-): void {
+export function writeConfig(config: GerbaudoConfig, targetPath: string): void {
   writeFileSync(targetPath, JSON.stringify(config, null, 2))
 }

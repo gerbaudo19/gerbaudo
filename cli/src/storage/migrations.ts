@@ -51,9 +51,7 @@ export function runMigrations(db: Database.Database): void {
   // ensure _migrations table exists first
   db.exec(migrations[0])
 
-  const row = db
-    .prepare('SELECT COUNT(*) as cnt FROM _migrations')
-    .get() as { cnt: number }
+  const row = db.prepare('SELECT COUNT(*) as cnt FROM _migrations').get() as { cnt: number }
 
   const applied = row?.cnt ?? 0
 

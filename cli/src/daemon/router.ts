@@ -2,10 +2,33 @@ import { Router } from 'express'
 import type { CatalogStore } from '../storage/catalog.js'
 import type { RecordStore } from '../storage/records.js'
 
-export function createRouter(
+function resolveEndpointId(catalogStore: CatalogStore, endpointId: string, method: string, path: string): string {
+  const existing = catalogStore.findById(endpointId)
+  if (existing) return endpointId
+  const resolved = catalogStore.findByMethodAndPath(method, path)
+  return resolved?.id ?? endpointId
+}
+
+function handleInterceptPayload(
   catalogStore: CatalogStore,
   recordStore: RecordStore,
-): Router {
+  payload: {
+    endpointId: string
+    method: string
+    path: string
+    status: number
+    requestHeaders?: string
+    requestBody?: string
+    responseHeaders?: string
+    responseBody?: string
+    durationMs?: number
+  },
+) {
+  const endpointId = resolveEndpointId(catalogStore, payload.endpointId, payload.method, payload.path)
+  return recordStore.insert({ ...payload, endpointId, durationMs: payload.durationMs ?? 0 })
+}
+
+export function createRouter(catalogStore: CatalogStore, recordStore: RecordStore): Router {
   const router = Router()
 
   router.post('/catalog/register', (req, res) => {
@@ -34,22 +57,22 @@ export function createRouter(
   })
 
   router.post('/intercept/record', (req, res) => {
-    const {
-      endpointId,
-      method,
-      path,
-      status,
-      requestHeaders,
-      requestBody,
-      responseHeaders,
-      responseBody,
-      durationMs,
-    } = req.body
+    if (Array.isArray(req.body)) {
+      const records = req.body.map((item: Record<string, unknown>) =>
+        handleInterceptPayload(catalogStore, recordStore, item as any),
+      )
+      res.json(records)
+      return
+    }
+
+    const reqBody = req.body as Record<string, unknown>
+    const { endpointId, method, path, status, requestHeaders, requestBody, responseHeaders, responseBody, durationMs } =
+      reqBody as any
     if (!method || !path || status === undefined) {
       res.status(400).json({ error: 'method, path, and status are required' })
       return
     }
-    const record = recordStore.insert({
+    const record = handleInterceptPayload(catalogStore, recordStore, {
       endpointId,
       method,
       path,

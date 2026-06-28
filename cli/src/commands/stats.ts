@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { Command } from 'commander'
+import chalk from 'chalk'
 import { loadConfig, findConfigPath } from '../config/config.js'
 import { getDb } from '../storage/db.js'
 import { RecordStore } from '../storage/records.js'
@@ -11,12 +12,7 @@ export function createStatsCommand(): Command {
     .action((opts) => {
       const configPath = findConfigPath()
       const config = loadConfig(configPath ?? undefined)
-      const dbPath = configPath
-        ? path.join(
-            path.dirname(configPath),
-            config.dbPath,
-          )
-        : config.dbPath
+      const dbPath = configPath ? path.join(path.dirname(configPath), config.dbPath) : config.dbPath
 
       const db = getDb(dbPath)
       const recordStore = new RecordStore(db)
@@ -27,20 +23,25 @@ export function createStatsCommand(): Command {
         return
       }
 
-      console.log('=== Gerbaudo Stats ===')
-      console.log(`Total endpoints: ${stats.totalEndpoints}`)
-      console.log(`Total requests:  ${stats.totalRecords}`)
-      console.log(`Errors (4xx+):   ${stats.errorCount}`)
+      console.log(chalk.bold('=== Gerbaudo Stats ==='))
+      console.log(chalk.cyan('Total endpoints:') + ` ${stats.totalEndpoints}`)
+      console.log(chalk.cyan('Total requests:') + `  ${stats.totalRecords}`)
+      const errorColor = stats.errorCount > 0 ? chalk.red : chalk.green
+      console.log(chalk.cyan('Errors (4xx+):') + `   ${errorColor(stats.errorCount)}`)
       console.log()
 
       if (stats.topEndpoints.length > 0) {
-        console.log('Top endpoints:')
-        console.table(stats.topEndpoints)
+        console.log(chalk.bold('Top endpoints:'))
+        for (const ep of stats.topEndpoints) {
+          console.log(`  ${ep.method} ${ep.path} — ${ep.count} requests`)
+        }
       }
 
       if (stats.slowestEndpoints.length > 0) {
-        console.log('Slowest endpoints (avg ms):')
-        console.table(stats.slowestEndpoints)
+        console.log(chalk.bold('Slowest endpoints (avg ms):'))
+        for (const ep of stats.slowestEndpoints) {
+          console.log(`  ${ep.method} ${ep.path} — ${Math.round(ep.avgDuration)}ms avg`)
+        }
       }
     })
 

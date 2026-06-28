@@ -17,14 +17,9 @@ export class CatalogStore {
     if (existing) {
       this.db
         .prepare(
-          'UPDATE endpoints SET params = ?, body_schema = ?, response_schema = ?, updated_at = datetime(\'now\') WHERE id = ?',
+          "UPDATE endpoints SET params = ?, body_schema = ?, response_schema = ?, updated_at = datetime('now') WHERE id = ?",
         )
-        .run(
-          endpoint.params ?? null,
-          endpoint.bodySchema ?? null,
-          endpoint.responseSchema ?? null,
-          existing.id,
-        )
+        .run(endpoint.params ?? null, endpoint.bodySchema ?? null, endpoint.responseSchema ?? null, existing.id)
       return {
         ...existing,
         params: endpoint.params ?? existing.params,
@@ -77,14 +72,11 @@ export class CatalogStore {
   }
 
   findById(id: string): Endpoint | undefined {
-    return this.db
-      .prepare('SELECT * FROM endpoints WHERE id = ?')
-      .get(id) as Endpoint | undefined
+    return this.db.prepare('SELECT * FROM endpoints WHERE id = ?').get(id) as Endpoint | undefined
   }
 
   findByMethodAndPath(method: string, path: string): Endpoint | undefined {
-    return this.db
-      .prepare('SELECT * FROM endpoints WHERE method = ? AND path = ?')
-      .get(method, path) as Endpoint | undefined
+    return this.db.prepare('SELECT * FROM endpoints WHERE method = ? AND path = ?').get(method, path) as
+      Endpoint | undefined
   }
 }

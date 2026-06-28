@@ -10,6 +10,7 @@ export class GerbaudoClient {
   private timer: ReturnType<typeof setInterval> | null = null
   private registered: Set<string> = new Set()
   private flushing = false
+  private endpointIdByKey: Map<string, string> = new Map()
 
   constructor(opts?: { daemonUrl?: string; batchInterval?: number; batchSize?: number }) {
     this.daemonUrl = opts?.daemonUrl ?? DEFAULT_DAEMON_URL
@@ -34,15 +35,24 @@ export class GerbaudoClient {
     if (this.registered.has(key)) return
 
     try {
-      await fetch(`${this.daemonUrl}/api/catalog/register`, {
+      const res = await fetch(`${this.daemonUrl}/api/catalog/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(endpoint),
       })
-      this.registered.add(key)
+      if (res.ok) {
+        const data = (await res.json()) as { id: string }
+        this.endpointIdByKey.set(key, data.id)
+      }
     } catch {
       // daemon might not be running yet
     }
+    this.registered.add(key)
+  }
+
+  getEndpointId(method: string, path: string): string {
+    const key = `${method}:${path}`
+    return this.endpointIdByKey.get(key) ?? key
   }
 
   recordIntercept(payload: InterceptPayload): void {
@@ -61,11 +71,13 @@ export class GerbaudoClient {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(batch.length === 1 ? batch[0] : batch),
-    }).catch(() => {
-      // re-queue on failure
-      this.batchQueue.unshift(...batch)
-    }).finally(() => {
-      this.flushing = false
     })
+      .catch(() => {
+        // re-queue on failure
+        this.batchQueue.unshift(...batch)
+      })
+      .finally(() => {
+        this.flushing = false
+      })
   }
 }

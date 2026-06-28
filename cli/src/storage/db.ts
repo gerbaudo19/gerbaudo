@@ -1,31 +1,42 @@
 import Database from 'better-sqlite3'
-import { mkdirp } from './mkdirp.js'
+import { ensureParentDir } from './mkdirp.js'
 import { runMigrations } from './migrations.js'
 
-let db: Database.Database | null = null
+const connections = new Map<string, Database.Database>()
 
 export function getDb(dbPath: string): Database.Database {
-  if (db) {
+  const existing = connections.get(dbPath)
+  if (existing) {
     try {
-      db.prepare('SELECT 1').get()
-      return db
+      existing.prepare('SELECT 1').get()
+      return existing
     } catch {
-      db = null
+      existing.close()
+      connections.delete(dbPath)
     }
   }
 
-  mkdirp(dbPath)
+  ensureParentDir(dbPath)
 
-  db = new Database(dbPath)
+  const db = new Database(dbPath)
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
   runMigrations(db)
+  connections.set(dbPath, db)
   return db
 }
 
-export function closeDb(): void {
-  if (db) {
-    db.close()
-    db = null
+export function closeDb(dbPath?: string): void {
+  if (dbPath) {
+    const db = connections.get(dbPath)
+    if (db) {
+      db.close()
+      connections.delete(dbPath)
+    }
+  } else {
+    for (const db of connections.values()) {
+      db.close()
+    }
+    connections.clear()
   }
 }

@@ -63,16 +63,16 @@ PUT  /api/users/:id
 
 Every request passing through your Express app is captured:
 
-| Field | Description |
-|---|---|
-| `method` | HTTP method |
-| `path` | Route pattern (`/api/users/:id`) |
-| `status` | Response status code |
-| `durationMs` | Response time in milliseconds |
-| `requestHeaders` | Incoming request headers (JSON) |
-| `requestBody` | Parsed request body (JSON) |
+| Field             | Description                      |
+| ----------------- | -------------------------------- |
+| `method`          | HTTP method                      |
+| `path`            | Route pattern (`/api/users/:id`) |
+| `status`          | Response status code             |
+| `durationMs`      | Response time in milliseconds    |
+| `requestHeaders`  | Incoming request headers (JSON)  |
+| `requestBody`     | Parsed request body (JSON)       |
 | `responseHeaders` | Outgoing response headers (JSON) |
-| `responseBody` | Response body (JSON) |
+| `responseBody`    | Response body (JSON)             |
 
 ### Batch processing
 
@@ -91,9 +91,9 @@ Intercepts are buffered and flushed in batches to avoid overwhelming the daemon:
 ```ts
 interface GerbaudoOptions {
   app?: { _router?: { stack: unknown[] } }
-  daemonUrl?: string       // default: 'http://127.0.0.1:9876'
-  batchInterval?: number   // default: 2000 (ms)
-  batchSize?: number       // default: 50
+  daemonUrl?: string // default: 'http://127.0.0.1:9876'
+  batchInterval?: number // default: 2000 (ms)
+  batchSize?: number // default: 50
 }
 ```
 

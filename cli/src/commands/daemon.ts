@@ -1,5 +1,7 @@
 import path from 'node:path'
 import { Command } from 'commander'
+import chalk from 'chalk'
+import { spinner } from '@clack/prompts'
 import { loadConfig, findConfigPath } from '../config/config.js'
 import { getDb, closeDb } from '../storage/db.js'
 import { CatalogStore } from '../storage/catalog.js'
@@ -29,11 +31,14 @@ export function createDaemonCommand(): Command {
 
       const server = new DaemonServer(config, catalogStore, recordStore)
 
+      const s = spinner()
+      s.start('Starting daemon...')
       try {
         await server.start()
-        console.log(`Gerbaudo daemon listening on http://127.0.0.1:${server.getPort()}`)
+        s.stop(chalk.green(`Gerbaudo daemon listening on http://127.0.0.1:${server.getPort()}`))
       } catch (err) {
-        console.error('Failed to start daemon:', err)
+        s.stop(chalk.red('Failed to start daemon'))
+        console.error(err)
         closeDb()
         process.exit(1)
       }

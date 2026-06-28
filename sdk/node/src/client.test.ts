@@ -30,7 +30,11 @@ describe('GerbaudoClient', () => {
     it('flushes remaining items on stop', () => {
       client.start()
       client.recordIntercept({
-        endpointId: 'ep1', method: 'GET', path: '/api/test', status: 200, durationMs: 10,
+        endpointId: 'ep1',
+        method: 'GET',
+        path: '/api/test',
+        status: 200,
+        durationMs: 10,
       })
       client.stop()
       expect(fetchMock).toHaveBeenCalledTimes(1)
@@ -57,7 +61,11 @@ describe('GerbaudoClient', () => {
       client.start()
       for (let i = 0; i < 10; i++) {
         client.recordIntercept({
-          endpointId: `ep${i}`, method: 'GET', path: '/api/test', status: 200, durationMs: i,
+          endpointId: `ep${i}`,
+          method: 'GET',
+          path: '/api/test',
+          status: 200,
+          durationMs: i,
         })
       }
       expect(fetchMock).toHaveBeenCalledTimes(1)
@@ -71,7 +79,11 @@ describe('GerbaudoClient', () => {
       client.start()
       for (let i = 0; i < 20; i++) {
         client.recordIntercept({
-          endpointId: `ep${i}`, method: 'GET', path: '/api/test', status: 200, durationMs: i,
+          endpointId: `ep${i}`,
+          method: 'GET',
+          path: '/api/test',
+          status: 200,
+          durationMs: i,
         })
       }
       // Only one flush should have been triggered (first batch of 10)
@@ -85,7 +97,11 @@ describe('GerbaudoClient', () => {
       client.start()
       for (let i = 0; i < 10; i++) {
         client.recordIntercept({
-          endpointId: `ep${i}`, method: 'GET', path: '/api/test', status: 200, durationMs: i,
+          endpointId: `ep${i}`,
+          method: 'GET',
+          path: '/api/test',
+          status: 200,
+          durationMs: i,
         })
       }
       expect(fetchMock).toHaveBeenCalledTimes(1)

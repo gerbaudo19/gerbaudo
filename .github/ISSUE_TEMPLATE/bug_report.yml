@@ -1,0 +1,47 @@
+name: Bug Report
+description: Report a bug to help us improve
+labels: [bug]
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `gerbaudo daemon --port 9999`
+        2. Run `gerbaudo run GET /api/test`
+        3. See error...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `npx @gerbaudo/cli --version`
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+      description: Output of `node --version`
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options: [Linux, macOS, Windows]
+    validations:
+      required: true

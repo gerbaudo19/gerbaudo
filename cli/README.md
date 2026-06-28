@@ -127,16 +127,16 @@ Config discovery searches the current directory upward (up to 10 levels) for `ge
 
 The daemon exposes these endpoints under `/api`:
 
-| Method | Route | Description |
-|---|---|---|
-| `GET` | `/api/catalog` | List registered endpoints |
-| `POST` | `/api/catalog/register` | Register or update an endpoint |
-| `POST` | `/api/intercept/record` | Record an intercepted request |
-| `GET` | `/api/records` | Query intercept records |
-| `GET` | `/api/records/:id` | Get a single record |
-| `GET` | `/api/stats` | Get usage statistics |
-| `GET` | `/api/agent/endpoints` | Endpoints in agent format |
-| `POST` | `/api/agent/exec` | Forward instruction for an endpoint |
+| Method | Route                   | Description                         |
+| ------ | ----------------------- | ----------------------------------- |
+| `GET`  | `/api/catalog`          | List registered endpoints           |
+| `POST` | `/api/catalog/register` | Register or update an endpoint      |
+| `POST` | `/api/intercept/record` | Record an intercepted request       |
+| `GET`  | `/api/records`          | Query intercept records             |
+| `GET`  | `/api/records/:id`      | Get a single record                 |
+| `GET`  | `/api/stats`            | Get usage statistics                |
+| `GET`  | `/api/agent/endpoints`  | Endpoints in agent format           |
+| `POST` | `/api/agent/exec`       | Forward instruction for an endpoint |
 
 ---
 
