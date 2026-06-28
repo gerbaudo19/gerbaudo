@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { execSync } from 'node:child_process'
 import { intro, outro, text, confirm, spinner, isCancel } from '@clack/prompts'
-import { writeConfig } from '../config/config.js'
+import { writeConfig, type GerbaudoConfig } from '../config/config.js'
 
 const SDK_PACKAGE = '@gerbaudo/sdk-node'
 
@@ -24,6 +24,7 @@ export function createInstallCommand(): Command {
     .alias('init')
     .description('Install Gerbaudo into the current project')
     .option('--port <number>', 'Daemon port')
+    .option('--backend-url <url>', 'Backend server URL')
     .option('--sdk', 'Auto-install the Node SDK package')
     .action(async (opts) => {
       const targetDir = process.cwd()
@@ -38,6 +39,7 @@ export function createInstallCommand(): Command {
 
       let daemonPort = parseInt(opts.port, 10) || 9876
       let dbPath = '.gerbaudo/data.db'
+      let backendUrl = opts.backendUrl as string | undefined
       let installSdk = !!opts.sdk
 
       if (!hasFlags) {
@@ -53,7 +55,10 @@ export function createInstallCommand(): Command {
             if (isNaN(n) || n < 1 || n > 65535) return 'Enter a valid port (1-65535)'
           },
         })
-        if (isCancel(portResult)) { outro('Cancelled.'); return }
+        if (isCancel(portResult)) {
+          outro('Cancelled.')
+          return
+        }
         daemonPort = parseInt(portResult as string, 10)
 
         const dbResult = await text({
@@ -61,18 +66,35 @@ export function createInstallCommand(): Command {
           placeholder: '.gerbaudo/data.db',
           defaultValue: '.gerbaudo/data.db',
         })
-        if (isCancel(dbResult)) { outro('Cancelled.'); return }
+        if (isCancel(dbResult)) {
+          outro('Cancelled.')
+          return
+        }
         dbPath = dbResult as string
+
+        const urlResult = await text({
+          message: 'Backend URL?',
+          placeholder: 'http://127.0.0.1:3000',
+          defaultValue: 'http://127.0.0.1:3000',
+        })
+        if (isCancel(urlResult)) {
+          outro('Cancelled.')
+          return
+        }
+        backendUrl = urlResult as string
 
         const sdkResult = await confirm({
           message: 'Install Node SDK?',
           initialValue: detectExpress(targetDir),
         })
-        if (isCancel(sdkResult)) { outro('Cancelled.'); return }
+        if (isCancel(sdkResult)) {
+          outro('Cancelled.')
+          return
+        }
         installSdk = sdkResult as boolean
       }
 
-      const config = { daemonPort, dbPath }
+      const config: GerbaudoConfig = { daemonPort, dbPath, backendUrl }
       writeConfig(config, configPath)
       const dbDir = join(targetDir, '.gerbaudo')
       if (!existsSync(dbDir)) {

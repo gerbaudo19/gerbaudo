@@ -24,6 +24,10 @@ npx @gerbaudo/cli daemon
 # Execute any endpoint
 npx @gerbaudo/cli run GET /api/users
 npx @gerbaudo/cli run POST /api/users --data '{"name":"John"}'
+
+# Or from a file / stdin (Windows-friendly)
+npx @gerbaudo/cli run POST /api/users -d @body.json
+echo '{"name":"John"}' | npx @gerbaudo/cli run POST /api/users -d -
 ```
 
 ---
@@ -43,15 +47,15 @@ npx @gerbaudo/cli run POST /api/users --data '{"name":"John"}'
 
 ## CLI commands
 
-| Command            | Description                               |
-| ------------------ | ----------------------------------------- |
-| `daemon`           | Start the daemon server                   |
-| `init` / `install` | Install Gerbaudo in the current project   |
-| `endpoints`        | List discovered endpoints                 |
-| `run <path>`       | Execute an endpoint                       |
-| `log [endpoint]`   | Query request history                     |
-| `stats`            | Show API usage statistics                 |
-| `export`           | Export API spec (OpenAPI) to YAML or JSON |
+| Command            | Description                                                   |
+| ------------------ | ------------------------------------------------------------- |
+| `daemon`           | Start the daemon server                                       |
+| `init` / `install` | Install Gerbaudo (asks for daemon port, backend URL, DB path) |
+| `endpoints`        | List discovered endpoints                                     |
+| `run <path>`       | Execute an endpoint                                           |
+| `log [endpoint]`   | Query request history                                         |
+| `stats`            | Show API usage statistics                                     |
+| `export`           | Export API spec (OpenAPI) to YAML or JSON                     |
 
 Run `npx @gerbaudo/cli <command> --help` for full flag reference.
 
@@ -153,7 +157,7 @@ npm run dev run /api/users    # execute endpoint
 ### Test
 
 ```sh
-cd cli && npm test             # 49 unit tests (vitest)
+cd cli && npm test             # 59 unit tests (vitest)
 cd sdk/node && npm test        # 7 unit tests
 npx tsx test-integration.ts    # integration test (from repo root)
 ```

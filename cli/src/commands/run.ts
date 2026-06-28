@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { readFileSync } from 'node:fs'
 import { Command } from 'commander'
 import chalk from 'chalk'
 import { loadConfig, findConfigPath } from '../config/config.js'
@@ -40,7 +41,7 @@ export function createRunCommand(): Command {
     .description('Execute an API endpoint')
     .argument('<endpoint>', 'Endpoint path (e.g., /api/users or /api/users/123)')
     .option('-X, --method <method>', 'HTTP method', 'GET')
-    .option('-d, --data <body>', 'Request body (JSON string)')
+    .option('-d, --data <body>', 'Request body (JSON string, @file, or - for stdin)')
     .option('-H, --header <headers...>', 'Request headers (Key:Value)')
     .option(
       '-p, --param <params...>',
@@ -103,7 +104,15 @@ export function createRunCommand(): Command {
 
       let body: string | undefined
       if (opts.data) {
-        body = opts.data
+        const raw = opts.data as string
+        if (raw === '-') {
+          body = readFileSync(0, 'utf-8')
+        } else if (raw.startsWith('@')) {
+          const filePath = raw.slice(1)
+          body = readFileSync(filePath, 'utf-8')
+        } else {
+          body = raw
+        }
       }
 
       const headers: Record<string, string> = {}
